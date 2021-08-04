@@ -1,6 +1,36 @@
-FROM openjdk:8-jdk-alpine
-VOLUME /tmp
-ARG JAR_FILE
-#COPY ${JAR_FILE} app.jar
-COPY target/demo-restapi-0.0.1-SNAPSHOT.jar app.jar
-ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
+ARG IMAGE=openliberty/open-liberty:kernel-slim-java8-openj9-ubi
+FROM ${IMAGE} as staging
+
+ENV KEYSTORE_REQUIRED=true
+
+# Copy server config so springBootUtility can be downloaded by featureUtility in the next step
+COPY --chown=1001:0 server.xml /config/server.xml
+
+# This script will add the requested XML snippets to enable Liberty features and grow image to be fit-for-purpose using featureUtility
+RUN features.sh
+
+COPY --chown=1001:0 target/demo-restapi-0.0.1-SNAPSHOT.jar /staging/myFatApp.jar
+COPY --chown=1001:0 keystore.xml /config/configDropins/defaults/keystore.xml
+
+
+RUN springBootUtility thin \
+ --sourceAppPath=/staging/myFatApp.jar \
+ --targetThinAppPath=/staging/myThinApp.jar \
+ --targetLibCachePath=/staging/lib.index.cache
+
+FROM ${IMAGE}
+COPY --chown=1001:0 server.xml /config
+
+ENV KEYSTORE_REQUIRED=true
+
+# This script will add the requested XML snippets to enable Liberty features and grow image to be fit-for-purpose using featureUtility
+RUN features.sh
+
+COPY --from=staging /staging/lib.index.cache /lib.index.cache
+COPY --from=staging /staging/myThinApp.jar /config/dropins/spring/myThinApp.jar
+
+COPY --chown=1001:0 keystore.xml /config/configDropins/defaults/keystore.xml
+
+ARG VERBOSE=false
+# This script will add the requested server configurations, apply any iFixes and populate caches to optimize runtime
+RUN configure.sh
