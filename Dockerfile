@@ -1,27 +1,46 @@
-ARG IMAGE=openliberty/open-liberty:kernel-slim-java8-openj9-ubi
-FROM ${IMAGE} as staging
+FROM adoptopenjdk/openjdk8-openj9 AS build-stage
 
-ENV KEYSTORE_REQUIRED=true
+RUN apt-get update && \
+    apt-get install -y maven unzip
 
-# Copy server config so springBootUtility can be downloaded by featureUtility in the next step
-COPY --chown=1001:0 server.xml /config/server.xml
+COPY . /project
+WORKDIR /project
+
+#RUN mvn -X initialize process-resources verify => to get dependencies from maven
+#RUN mvn clean package	
+#RUN mvn --version
+RUN mvn clean package
+
+RUN mkdir -p /config/apps && \
+    mkdir -p /sharedlibs && \
+    cp ./src/main/liberty/config/server.xml /config && \
+    cp ./target/*.*ar /config/apps/ && \
+    if [ ! -z "$(ls ./src/main/liberty/lib)" ]; then \
+        cp ./src/main/liberty/lib/* /sharedlibs; \
+    fi
+
+
+FROM openliberty/open-liberty:kernel-slim-java8-openj9-ubi as staging
+
+RUN mkdir -p /opt/ol/wlp/usr/shared/config/lib/global
+
+COPY --chown=1001:0 --from=build-stage /config/ /config/
+COPY --chown=1001:0 --from=build-stage /sharedlibs/ /opt/ol/wlp/usr/shared/config/lib/global
 
 # This script will add the requested XML snippets to enable Liberty features and grow image to be fit-for-purpose using featureUtility
 RUN features.sh
 
-COPY --chown=1001:0 target/demo-restapi-0.0.1-SNAPSHOT.jar /staging/myFatApp.jar
-COPY --chown=1001:0 keystore.xml /config/configDropins/defaults/keystore.xml
-
+COPY --chown=1001:0 --from=build-stage /config/apps/*.jar /staging/myFatApp.jar
 
 RUN springBootUtility thin \
  --sourceAppPath=/staging/myFatApp.jar \
  --targetThinAppPath=/staging/myThinApp.jar \
  --targetLibCachePath=/staging/lib.index.cache
 
-FROM ${IMAGE}
-COPY --chown=1001:0 server.xml /config
 
-ENV KEYSTORE_REQUIRED=true
+FROM openliberty/open-liberty:kernel-slim-java8-openj9-ubi
+
+COPY --chown=1001:0 --from=staging /config/ /config/
 
 # This script will add the requested XML snippets to enable Liberty features and grow image to be fit-for-purpose using featureUtility
 RUN features.sh
@@ -29,7 +48,6 @@ RUN features.sh
 COPY --from=staging /staging/lib.index.cache /lib.index.cache
 COPY --from=staging /staging/myThinApp.jar /config/dropins/spring/myThinApp.jar
 
-COPY --chown=1001:0 keystore.xml /config/configDropins/defaults/keystore.xml
 
 ARG VERBOSE=false
 # This script will add the requested server configurations, apply any iFixes and populate caches to optimize runtime
