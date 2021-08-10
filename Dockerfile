@@ -45,6 +45,7 @@ RUN mkdir -p /opt/ol/wlp/usr/shared/config/lib/global
 COPY --chown=1001:0 --from=staging /config/ /config/
 COPY --chown=1001:0 --from=staging /opt/ol/wlp/usr/shared/config/lib/global/ /opt/ol/wlp/usr/shared/config/lib/global/
 
+
 # This script will add the requested XML snippets to enable Liberty features and grow image to be fit-for-purpose using featureUtility
 RUN features.sh
 
