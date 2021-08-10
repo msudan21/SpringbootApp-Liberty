@@ -1,0 +1,7 @@
+com/ibm/demorestapi/Application.class
+com/ibm/demorestapi/repository/StudentRepository.class
+com/ibm/demorestapi/service/StudentService.class
+com/ibm/demorestapi/service/StudentServiceV2Impl.class
+com/ibm/demorestapi/model/Student.class
+com/ibm/demorestapi/controller/StudentController.class
+com/ibm/demorestapi/service/StudentServiceV1Impl.class
