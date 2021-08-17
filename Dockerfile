@@ -20,7 +20,7 @@ COPY --chown=1001:0 src/main/liberty/config /config/
 
 RUN features.sh
 
-COPY --chown=1001:0 src/main/liberty/lib/* /sharedlibs
+# COPY --chown=1001:0 src/main/liberty/lib/* /sharedlibs
 COPY --chown=1001:0 target/*.*ar /config/apps/
 
 
