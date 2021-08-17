@@ -1,0 +1,66 @@
+apiVersion: v1
+items:
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: restapi
+      app.kubernetes.io/component: restapi
+      app.kubernetes.io/instance: restapi
+    name: restapi
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        deployment: restapi
+    strategy: {}
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          deployment: restapi
+      spec:
+        containers:
+        - image: msudan21/liberty:restapi
+          name: restapi
+          ports:
+          - containerPort: 9443
+            protocol: TCP
+          - containerPort: 9080
+            protocol: TCP
+          resources: {}
+        imagePullSecrets:
+          - name: dockerhubsecret
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: restapi
+      app.kubernetes.io/component: restapi
+      app.kubernetes.io/instance: restapi
+    name: restapi
+  spec:
+    ports:
+    - name: 9080-tcp
+      port: 9080
+      protocol: TCP
+      targetPort: 9080
+    - name: 9443-tcp
+      port: 9443
+      protocol: TCP
+      targetPort: 9443
+    selector:
+      deployment: restapi
+  status:
+    loadBalancer: {}
+kind: List
+metadata: {}
