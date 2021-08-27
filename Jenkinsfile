@@ -1,7 +1,7 @@
 pipeline {
     agent any
     parameters {
-        string(name: 'PROJECT', defaultValue: 'https://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@github.com/msudan21/SpringbootApp-Liberty.git', description: 'Enter Project name ')
+        string(name: 'PROJECT', defaultValue: 'https://<token>@github.com/msudan21/SpringbootApp-Liberty.git', description: 'Enter Project name ')
         string(name: 'SERVICE_NAME', defaultValue: 'defaultService', description: 'Enter Service name ')
 
         }
@@ -9,7 +9,7 @@ pipeline {
         stage('Checkout') {
             steps {
                  echo "Hello ${params.PROJECT}"
-				 checkout([$class: 'GitSCM', branches: [[name: '*/master']], userRemoteConfigs: [[url: 'https://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@github.com/msudan21/SpringbootApp-Liberty.git']]])
+				 checkout([$class: 'GitSCM', branches: [[name: '*/master']], userRemoteConfigs: [[url: 'https://<token>@github.com/msudan21/SpringbootApp-Liberty.git']]])
 	
             }
         }    
@@ -25,7 +25,7 @@ pipeline {
                 echo 'Dockerizing application'
                 sh 'docker build -t madhuapi/restapi:1.0 .'
 				sh 'docker logout'
-                sh 'docker login -u msudan21 -p Pune@2021 docker.io'
+                sh 'docker login -u <userID> -p <Password> docker.io'
                 sh 'docker tag madhuapi/restapi:1.0 msudan21/liberty:restapi'
 				sh 'docker push msudan21/liberty:restapi'
 				
